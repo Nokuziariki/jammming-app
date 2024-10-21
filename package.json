@@ -11,6 +11,7 @@
         "@testing-library/jest-dom": "^5.17.0",
         "@testing-library/react": "^13.4.0",
         "@testing-library/user-event": "^13.5.0",
+        "query-string": "^9.1.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-scripts": "5.0.1",
@@ -42,7 +43,7 @@
             "last 1 safari version"
         ]
     },
-    "homepage": "https://felhasznalonev.github.io/jammming",
+    "homepage": "https://nokuziariki.github.io/jammming-app",
     "devDependencies": {
         "gh-pages": "^6.2.0"
     }

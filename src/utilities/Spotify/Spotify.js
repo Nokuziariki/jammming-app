@@ -1,11 +1,12 @@
 const clientId = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
+const clientSecret = process.env.REACT_APP_SPOTIFY_CLIENT_SECRET;
+
 const redirectUri =
-  process.env.NODE_ENV === "development"
-    ? process.env.REACT_APP_SPOTIFY_REDIRECT_URI_LOCAL
-    : process.env.REACT_APP_SPOTIFY_REDIRECT_URI_LIVE;
+    process.env.NODE_ENV === "development"
+        ? process.env.REACT_APP_SPOTIFY_REDIRECT_URI_LOCAL
+        : process.env.REACT_APP_SPOTIFY_REDIRECT_URI_LIVE;
 let accessToken = "";
-// const clientSecret = process.env.REACT_APP_SPOTIFY_CLIENT_SECRET;
-// let clientAccessToken = '';
+let clientAccessToken = "";
 
 const Spotify = {
     getAccessToken() {
@@ -33,28 +34,70 @@ const Spotify = {
         }
     },
 
+    async getClientAccessToken() {
+        if (clientAccessToken) {
+            return clientAccessToken;
+        }
+
+        const data = new URLSearchParams({
+            grant_type: "client_credentials",
+            client_id: clientId,
+            client_secret: clientSecret,
+        });
+
+        const requestOptions = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: data.toString(),
+        };
+
+        try {
+            const response = await fetch(
+                "https://accounts.spotify.com/api/token",
+                requestOptions
+            );
+            const responseData = await response.json();
+
+            clientAccessToken = responseData.access_token;
+
+            return clientAccessToken;
+        } catch (error) {
+            console.error("Error fetching access token:", error);
+            throw error; // Továbbdobjuk a hibát
+        }
+    },
+
     async search(term) {
         try {
-            const accessToken = this.getAccessToken();
-            const encodedTerm = encodeURIComponent(term);
+            await Spotify.getClientAccessToken();
+
             const response = await fetch(
-                `https://api.spotify.com/v1/search?type=track&q=${encodedTerm}`,
+                `https://api.spotify.com/v1/search?type=track&q=${term}`,
                 {
-                    headers: { Authorization: `Bearer ${accessToken}` },
+                    headers: {
+                        Authorization: `Bearer ${clientAccessToken}`,
+                    },
                 }
             );
 
-            if (!response.ok) throw new Error("Search failed");
-            const jsonResponse = await response.json();
+            if (!response.ok) {
+                throw new Error("Spotify accesstoken request failed!");
+            }
 
-            if (!jsonResponse.tracks) return [];
+            const data = await response.json();
 
-            return jsonResponse.tracks.items.map((track) => ({
+            if (!data.tracks || !data.tracks.items) {
+                return [];
+            }
+
+            return data.tracks.items.map((track) => ({
                 id: track.id,
                 name: track.name,
                 artist: track.artists[0].name,
                 album: track.album.name,
-                albumArt: track.album.images[0]?.url || "", // Nullish coalescing operator
+                albumArt: track.album.images[0]?.url || "",
                 uri: track.uri,
             }));
         } catch (error) {
@@ -63,46 +106,63 @@ const Spotify = {
         }
     },
 
-    savePlaylistName(name, trackURI) {
+    async savePlaylistName(name, trackURI) {
         if (!name || !trackURI.length) {
-            return;
+            throw new Error("The playlistname and the track add is required");
         }
 
         const accessToken = Spotify.getAccessToken();
+        if (!accessToken) {
+            throw new Error("No valid access token");
+        }
+
         const headers = { Authorization: `Bearer ${accessToken}` };
         let userID = "";
 
-        return fetch(`https://api.spotify.com/v1/me`, {
-            headers: headers,
-        })
-            .then((response) => {
-                return response.json();
-            })
-            .then((jsonResponse) => {
-                userID = jsonResponse.id;
-                return fetch(
-                    `https://api.spotify.com/v1/users/${userID}/playlists`,
-                    {
-                        headers: headers,
-                        method: "POST",
-                        body: JSON.stringify({ name: name }),
-                    }
-                );
-            })
-            .then((response) => {
-                return response.json();
-            })
-            .then((jsonResponse) => {
-                const playlistID = jsonResponse.id;
-                return fetch(
-                    `https://api.spotify.com/v1/users/${userID}/playlists/${playlistID}/tracks`,
-                    {
-                        headers: headers,
-                        method: "POST",
-                        body: JSON.stringify({ uris: trackURI }),
-                    }
-                );
+        try {
+            const userResponse = await fetch(`https://api.spotify.com/v1/me`, {
+                headers: headers,
             });
+
+            if (!userResponse.ok) {
+                throw new Error("Failed to retrieve user data");
+            }
+
+            const userData = await userResponse.json();
+            userID = userData.id;
+
+            const createPlaylistResponse = await fetch(
+                `https://api.spotify.com/v1/users/${userID}/playlists`,
+                {
+                    headers: headers,
+                    method: "POST",
+                    body: JSON.stringify({ name: name }),
+                }
+            );
+
+            if (!createPlaylistResponse.ok) {
+                throw new Error("Failed to create playlist");
+            }
+
+            const playlistData = await createPlaylistResponse.json();
+            const playlistID = playlistData.id;
+
+            const addTracksResponse = await fetch(
+                `https://api.spotify.com/v1/users/${userID}/playlists/${playlistID}/tracks`,
+                {
+                    headers: headers,
+                    method: "POST",
+                    body: JSON.stringify({ uris: trackURI }),
+                }
+            );
+
+            if (!addTracksResponse.ok) {
+                throw new Error("Failed to add songs to playlist");
+            }
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
     },
 };
 
