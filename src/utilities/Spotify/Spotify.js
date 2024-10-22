@@ -1,6 +1,5 @@
 const clientId = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.REACT_APP_SPOTIFY_CLIENT_SECRET;
-
 const redirectUri =
     process.env.NODE_ENV === "development"
         ? process.env.REACT_APP_SPOTIFY_REDIRECT_URI_LOCAL
@@ -39,7 +38,7 @@ const Spotify = {
             return clientAccessToken;
         }
 
-        const data = new URLSearchParams({
+        let data = new URLSearchParams({
             grant_type: "client_credentials",
             client_id: clientId,
             client_secret: clientSecret,
@@ -65,7 +64,7 @@ const Spotify = {
             return clientAccessToken;
         } catch (error) {
             console.error("Error fetching access token:", error);
-            throw error; // Továbbdobjuk a hibát
+            throw error;
         }
     },
 
@@ -117,7 +116,7 @@ const Spotify = {
         }
 
         const headers = { Authorization: `Bearer ${accessToken}` };
-        let userID = "";
+        let userID;
 
         try {
             const userResponse = await fetch(`https://api.spotify.com/v1/me`, {
