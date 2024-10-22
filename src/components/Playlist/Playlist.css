@@ -55,3 +55,26 @@
 .playlist button:active {
     background-color: rgb(34, 41, 136);
 }
+
+@media only screen and (max-width: 768px) {
+    .playlist {
+        width: 90%;
+        height: auto;
+        height: 900px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .playlist {
+        margin-top: 35px;
+        width: 100%;
+        padding: 20px;
+        height: 900px;
+    }
+
+    .playlist input {
+        width: 100%;
+        height: auto;
+        font-size: 24px;
+    }
+}

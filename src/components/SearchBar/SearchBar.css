@@ -31,3 +31,33 @@
 .search-bar button:active {
     background-color: rgb(34, 41, 136);
 }
+
+@media only screen and (max-width: 768px) {
+    .search-bar {
+        width: 50%;
+    }
+
+    .search-bar input {
+        width: 250px;
+    }
+
+    .search-bar button {
+        width: 120px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .search-bar {
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    .search-bar input {
+        width: 100%;
+    }
+
+    .search-bar button {
+        width: 150px;
+        margin-top: 15px;
+    }
+}

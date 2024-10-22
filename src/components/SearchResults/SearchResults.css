@@ -27,3 +27,20 @@
     width: 0px;
     background: transparent;
 }
+
+@media only screen and (max-width: 768px) {
+    .search-results {
+        width: 90%;
+        height: auto;
+        height: 900px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .search-results {
+        margin-top: 15px;
+        width: 100%;
+        padding: 20px;
+        height: 900px;
+    }
+}
